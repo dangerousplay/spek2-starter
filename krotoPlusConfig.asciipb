@@ -1,0 +1,14 @@
+mock_services {
+    implement_as_object: true
+    generate_service_list: true
+}
+
+proto_builders {
+    unwrap_builders: true
+    use_dsl_markers: true
+}
+
+grpc_stub_exts {
+    support_coroutines: true
+}
+

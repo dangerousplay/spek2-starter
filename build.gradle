@@ -1,0 +1,92 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+    id 'com.google.protobuf' version '0.8.8'
+}
+
+group 'io.sicredi.spek.test'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'kotlin'
+apply plugin: 'idea'
+apply plugin: 'com.google.protobuf'
+
+ext {
+    spek_version = '2.0.4'
+    protobufVersion = '3.3.0'
+    krotoPlusVersion = '0.3.0'
+    grpc_version = '1.20.0'
+    arrow_version = '0.9.0'
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://dl.bintray.com/spekframework/spek/" }
+}
+
+test {
+    useJUnitPlatform {
+        includeEngines 'spek2'
+    }
+}
+
+dependencies {
+
+    testImplementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect'
+    testImplementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
+    testImplementation group: 'com.winterbe', name:'expekt', version: '0.5.0'
+    testImplementation group: 'io.arrow-kt', name:'arrow-core-data', version: arrow_version
+
+    testImplementation group: 'io.grpc', name: 'grpc-all', version: grpc_version
+    testImplementation group: 'com.github.marcoferrer.krotoplus', name: 'kroto-plus-test', version: krotoPlusVersion
+    testImplementation group: 'com.github.marcoferrer.krotoplus', name: 'kroto-plus-coroutines', version: krotoPlusVersion
+
+    testImplementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
+
+    testImplementation group: 'org.junit.jupiter', name:'junit-jupiter-api', version: '5.3.1'
+    testImplementation group: 'org.spekframework.spek2', name:'spek-dsl-jvm', version: spek_version
+
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.3.1'
+    testRuntimeOnly group: 'org.spekframework.spek2', name: 'spek-runner-junit5', version: spek_version
+
+    testImplementation "org.jetbrains.kotlin:kotlin-test"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
+}
+
+protobuf {
+    protoc { artifact = "com.google.protobuf:protoc:$protobufVersion"}
+
+    plugins {
+        kroto {
+            path = "${System.env['OS'].contains('Windows') ? 'kroto\\krotoPlus.bat' : '' }"
+            //artifact = "com.github.marcoferrer.krotoplus:protoc-gen-kroto-plus:$krotoPlusVersion:jvm8@jar"
+        }
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpc_version}"
+        }
+    }
+
+    generateProtoTasks {
+        def krotoConfig = file("krotoPlusConfig.asciipb")
+
+        all().each{ task ->
+
+            //task.inputs.files krotoConfig
+
+            task.plugins {
+                grpc { outputSubDir = "java" }
+                kroto {
+                    outputSubDir = "java"
+                    option "ConfigPath=${file(System.getProperty("user.dir")).toPath().toAbsolutePath().relativize(krotoConfig.toPath().toAbsolutePath()).toString()}"
+                }
+            }
+        }
+    }
+}
+
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
